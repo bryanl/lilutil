@@ -33,7 +33,7 @@ func WaitForChannelsToClose(ctx context.Context, chans ...<-chan struct{}) bool 
 
 // HandleGracefulClose gracefully handles shutting down the process.
 func HandleGracefulClose(ctx context.Context, cancel context.CancelFunc, chans ...<-chan struct{}) {
-	logger := log.From(ctx)
+	logger := log.From(ctx).WithName("graceful")
 
 	signalChan := make(chan os.Signal, 1)
 
