@@ -44,8 +44,8 @@ func LoggerOutput(w io.Writer) LoggerOption {
 }
 
 // WithLogger creates a new context with an embedded logger.
-func WithLogger(ctx context.Context) context.Context {
-	return context.WithValue(ctx, logKey, newLogger())
+func WithLogger(ctx context.Context, options ...LoggerOption) context.Context {
+	return context.WithValue(ctx, logKey, newLogger(options...))
 }
 
 // LoggerConfig is logger configuration.
