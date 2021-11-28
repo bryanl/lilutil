@@ -2,6 +2,8 @@ package log
 
 import (
 	"context"
+	"io"
+	"os"
 
 	"github.com/bombsimon/logrusr"
 	"github.com/go-logr/logr"
@@ -27,11 +29,50 @@ func From(ctx context.Context) logr.Logger {
 	return newLogger()
 }
 
+// LoggerOption is an option for configuring the logger.
+type LoggerOption func(config *LoggerConfig)
+
+// LoggerOutput sets the output location for the logger.
+func LoggerOutput(w io.Writer) LoggerOption {
+	if w == nil {
+		panic("logger output cannot be nil")
+	}
+
+	return func(config *LoggerConfig) {
+		config.out = w
+	}
+}
+
 // WithLogger creates a new context with an embedded logger.
 func WithLogger(ctx context.Context) context.Context {
 	return context.WithValue(ctx, logKey, newLogger())
 }
 
-func newLogger() logr.Logger {
-	return logrusr.NewLogger(logrus.New())
+// LoggerConfig is logger configuration.
+type LoggerConfig struct {
+	out io.Writer
+}
+
+func newLoggerConfig() *LoggerConfig {
+	config := &LoggerConfig{
+		out: os.Stderr,
+	}
+
+	return config
+}
+
+func (config *LoggerConfig) update(logger *logrus.Logger) {
+	logger.Out = config.out
+}
+
+func newLogger(options ...LoggerOption) logr.Logger {
+	config := newLoggerConfig()
+	for _, option := range options {
+		option(config)
+	}
+
+	l := logrus.New()
+	config.update(l)
+
+	return logrusr.NewLogger(l)
 }
