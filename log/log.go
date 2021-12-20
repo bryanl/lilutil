@@ -43,6 +43,11 @@ func LoggerOutput(w io.Writer) LoggerOption {
 	}
 }
 
+// WithExistingLogger creates a new context with an existing logger.
+func WithExistingLogger(ctx context.Context, logger logr.Logger) context.Context {
+	return context.WithValue(ctx, logKey, logger)
+}
+
 // WithLogger creates a new context with an embedded logger.
 func WithLogger(ctx context.Context, options ...LoggerOption) context.Context {
 	return context.WithValue(ctx, logKey, newLogger(options...))
