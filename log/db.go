@@ -84,8 +84,8 @@ func (d *DB) Trace(_ context.Context, begin time.Time, fc func() (string, int64)
 
 	switch {
 	case err != nil && (!errors.Is(err, logger.ErrRecordNotFound)):
-		d.logger.Info(d.message, append([]interface{}{"db-level", "trace"}, fields...))
+		d.logger.Info(d.message, append([]interface{}{"db-level", "trace"}, fields...)...)
 	default:
-		d.logger.Info(d.message, append([]interface{}{"db-level", "info"}, fields...))
+		d.logger.Info(d.message, append([]interface{}{"db-level", "info"}, fields...)...)
 	}
 }
