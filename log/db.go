@@ -12,8 +12,9 @@ import (
 
 // DB is a database logger.
 type DB struct {
-	logger logr.Logger
-	level  logger.LogLevel
+	logger  logr.Logger
+	level   logger.LogLevel
+	message string
 }
 
 // DBOption is a function for configuring DB.
@@ -26,9 +27,18 @@ func WithDBLevel(level logger.LogLevel) DBOption {
 	}
 }
 
+// WithDBLogMessage sets the log message for DB logs.
+func WithDBLogMessage(msg string) DBOption {
+	return func(d *DB) {
+		d.message = msg
+	}
+}
+
 // DBLogger creates an instance of DB>
 func DBLogger(l logr.Logger, options ...DBOption) *DB {
-	db := &DB{}
+	db := &DB{
+		message: "db command",
+	}
 
 	for _, option := range options {
 		option(db)
@@ -74,8 +84,8 @@ func (d *DB) Trace(_ context.Context, begin time.Time, fc func() (string, int64)
 
 	switch {
 	case err != nil && (!errors.Is(err, logger.ErrRecordNotFound)):
-		d.logger.Error(err, "trace", fields...)
+		d.logger.Info(d.message, append([]interface{}{"db-level", "trace"}, fields...))
 	default:
-		d.logger.Info("info", fields...)
+		d.logger.Info(d.message, append([]interface{}{"db-level", "info"}, fields...))
 	}
 }
