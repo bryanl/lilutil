@@ -13,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
+	gorm.io/driver/postgres v1.2.3 // indirect
 	gorm.io/driver/sqlite v1.2.6 // indirect
 	gorm.io/gorm v1.22.4 // indirect
 )
