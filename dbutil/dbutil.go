@@ -3,10 +3,11 @@ package dbutil
 import (
 	"context"
 
-	"github.com/bryanl/lilutil/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/bryanl/lilutil/log"
 )
 
 // InitSqlite initializes a sqlite db connection.
