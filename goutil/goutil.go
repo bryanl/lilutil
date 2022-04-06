@@ -45,24 +45,24 @@ func HandleGracefulClose(ctx context.Context, cancel context.CancelFunc, chans .
 	)
 
 	<-signalChan
-	logger.Info("shutting down gracefully")
+	logger.Info("Shutting down gracefully")
 
 	closeCtx, closeCancel := context.WithTimeout(ctx, 5*time.Second)
 	defer closeCancel()
 
 	go func() {
 		<-signalChan
-		logger.Info("terminating")
+		logger.Info("Terminating")
 		closeCancel()
 	}()
 
 	cancel()
 
-	logger.Info("waiting for servers to stop")
+	logger.Info("Waiting for servers to stop")
 
 	if !WaitForChannelsToClose(closeCtx, chans...) {
-		logger.Info("all channels were not closed")
+		logger.Info("All channels were not closed")
 	}
 
-	logger.Info("exiting normally")
+	logger.Info("Exiting normally")
 }

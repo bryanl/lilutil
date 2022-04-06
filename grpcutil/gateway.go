@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bryanl/lilutil/log"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
+	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"google.golang.org/grpc"
+
+	"github.com/bryanl/lilutil/log"
 )
 
 var (
@@ -36,6 +38,8 @@ type GatewayConfig struct {
 	HTTPAddr string
 	// Endpoints is a slice of endpoint functions.
 	Endpoints []Endpoint
+	// EnableWebsockets enables websocket support.
+	EnableWebsockets bool
 }
 
 // Gateway is a GRPC HTTP gateway.
@@ -70,9 +74,12 @@ func (g *Gateway) Start(ctx context.Context) (<-chan struct{}, error) {
 		}
 	}
 
-	ch := make(chan struct{}, 1)
-
 	handler := cors.AllowAll().Handler(mux)
+
+	handler, err := g.createHandler(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create handler for gateway: %w", err)
+	}
 
 	httpServer := &http.Server{
 		Addr:        g.config.HTTPAddr,
@@ -80,27 +87,29 @@ func (g *Gateway) Start(ctx context.Context) (<-chan struct{}, error) {
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
+	ch := make(chan struct{}, 1)
+
 	go func() {
-		logger.Info("start up",
+		logger.Info("Starting GRPC gateway",
 			"addr", g.config.HTTPAddr,
 			"server", g.config.ServerAddr)
 
 		err := httpServer.ListenAndServe()
 		if !errors.Is(err, http.ErrServerClosed) {
-			logger.Error(err, "failed to stop HTTP server cleanly")
+			logger.Error(err, "Failed to stop HTTP server for GRPC gateway cleanly")
 		}
-		logger.Info("gateway has stopped")
+		logger.Info("GRPC gateway has stopped")
 	}()
 
 	go func() {
 		<-ctx.Done()
-		logger.Info("stopping gracefully")
+		logger.Info("Stopping GRPC gateway gracefully")
 
 		gracefulCtx, cancelShutdown := context.WithTimeout(context.Background(), g.shutdownTimeout)
 		defer cancelShutdown()
 
 		if err := httpServer.Shutdown(gracefulCtx); err != nil {
-			logger.Error(err, "attempting to shut server down")
+			logger.Error(err, "Unable to shut GRPC gateway down cleanly")
 		}
 
 		close(ch)
@@ -111,4 +120,25 @@ func (g *Gateway) Start(ctx context.Context) (<-chan struct{}, error) {
 
 func (g *Gateway) registerEndpoint(ctx context.Context, mux *runtime.ServeMux, fn Endpoint) error {
 	return fn(ctx, mux, g.config.ServerAddr, g.grpcDialOptions)
+}
+
+func (g *Gateway) createHandler(ctx context.Context) (http.Handler, error) {
+	mux := runtime.NewServeMux()
+
+	for _, endpoint := range g.config.Endpoints {
+		if err := g.registerEndpoint(ctx, mux, endpoint); err != nil {
+			return nil, fmt.Errorf("register endpoint: %w", err)
+		}
+	}
+
+	var h http.Handler = mux
+	if g.config.EnableWebsockets {
+		logger := log.From(ctx)
+		logger.Info("Enabling websockets")
+		h = wsproxy.WebsocketProxy(h)
+	}
+
+	handler := cors.AllowAll().Handler(h)
+
+	return handler, nil
 }

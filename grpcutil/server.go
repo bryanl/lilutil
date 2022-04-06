@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/bryanl/lilutil/log"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
+
+	"github.com/bryanl/lilutil/log"
 )
 
 // RegisterFn is a function that takes a GRPC server as input.
@@ -69,20 +70,20 @@ func (server *Server) Start(ctx context.Context) (<-chan struct{}, error) {
 	}
 
 	lis := server.config.Listener
-	logger.Info("starting server", "addr", lis.Addr().String())
+	logger.Info("Starting GRPC server", "addr", lis.Addr().String())
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
-			logger.Error(err, "stop server")
+			logger.Error(err, "Unable to stop GRPC server cleanly")
 		}
-		logger.Info("server has stopped")
+		logger.Info("GRPC server has stopped")
 	}()
 
 	ch := make(chan struct{}, 1)
 
 	go func() {
 		<-ctx.Done()
-		logger.Info("stopping gracefully")
+		logger.Info("Stopping GRPC server gracefully")
 		s.GracefulStop()
 		close(ch)
 	}()
