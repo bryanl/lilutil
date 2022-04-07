@@ -60,10 +60,10 @@ func NewServer(name string, config ServerConfig) (*Server, error) {
 }
 
 // Start starts the GRPC server.
-func (server *Server) Start(ctx context.Context) (<-chan struct{}, error) {
+func (server *Server) Start(ctx context.Context, options ...grpc.ServerOption) (<-chan struct{}, error) {
 	logger := log.From(ctx).WithName(server.name)
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(options...)
 
 	if err := server.config.RegisterFunc(s); err != nil {
 		return nil, fmt.Errorf("grpc register: %w", err)
