@@ -3,8 +3,8 @@ module github.com/bryanl/lilutil
 go 1.16
 
 require (
-	github.com/bombsimon/logrusr v1.1.0
-	github.com/go-logr/logr v0.1.0
+	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
+	github.com/go-logr/logr v1.2.3
 	github.com/golang/mock v1.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.1
 	github.com/jinzhu/now v1.1.4 // indirect

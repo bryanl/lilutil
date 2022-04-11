@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/bombsimon/logrusr"
+	"github.com/bombsimon/logrusr/v2"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 )
@@ -53,7 +53,7 @@ func WithLogger(ctx context.Context, options ...LoggerOption) context.Context {
 	return context.WithValue(ctx, logKey, newLogger(options...))
 }
 
-// LoggerConfig is logger configuration.
+// LoggerConfig is logger configuration.NewLogger
 type LoggerConfig struct {
 	out io.Writer
 }
@@ -79,5 +79,5 @@ func newLogger(options ...LoggerOption) logr.Logger {
 	l := logrus.New()
 	config.update(l)
 
-	return logrusr.NewLogger(l)
+	return logrusr.New(l)
 }
