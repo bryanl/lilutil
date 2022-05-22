@@ -63,20 +63,11 @@ func NewGateway(name string, config GatewayConfig) *Gateway {
 }
 
 // Start starts the gateway. It returns a channel that, when closed, stops the gateway.
-func (g *Gateway) Start(ctx context.Context) (<-chan struct{}, error) {
+func (g *Gateway) Start(ctx context.Context, options ...runtime.ServeMuxOption) (<-chan struct{}, error) {
 	logger := log.From(ctx).WithName(g.name)
+	ctx = log.WithExistingLogger(ctx, logger)
 
-	mux := runtime.NewServeMux()
-
-	for _, endpoint := range g.config.Endpoints {
-		if err := g.registerEndpoint(ctx, mux, endpoint); err != nil {
-			return nil, fmt.Errorf("register endpoint: %w", err)
-		}
-	}
-
-	handler := cors.AllowAll().Handler(mux)
-
-	handler, err := g.createHandler(ctx)
+	handler, err := g.createHandler(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("create handler for gateway: %w", err)
 	}
@@ -122,8 +113,10 @@ func (g *Gateway) registerEndpoint(ctx context.Context, mux *runtime.ServeMux, f
 	return fn(ctx, mux, g.config.ServerAddr, g.grpcDialOptions)
 }
 
-func (g *Gateway) createHandler(ctx context.Context) (http.Handler, error) {
-	mux := runtime.NewServeMux()
+func (g *Gateway) createHandler(ctx context.Context, options ...runtime.ServeMuxOption) (http.Handler, error) {
+	logger := log.From(ctx)
+
+	mux := runtime.NewServeMux(options...)
 
 	for _, endpoint := range g.config.Endpoints {
 		if err := g.registerEndpoint(ctx, mux, endpoint); err != nil {
@@ -133,7 +126,6 @@ func (g *Gateway) createHandler(ctx context.Context) (http.Handler, error) {
 
 	var h http.Handler = mux
 	if g.config.EnableWebsockets {
-		logger := log.From(ctx)
 		logger.Info("Enabling websockets")
 		h = wsproxy.WebsocketProxy(h)
 	}
